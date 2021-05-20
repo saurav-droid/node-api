@@ -9,12 +9,18 @@ const con = mysql.createConnection({
   host: "localhost",
   user: "root",
   password: '',
-  database: "employees"
+  database: "weatherbit"
 });
 
+
+var test =[]
 con.connect(function(err) {
   if (err) throw err;
-  console.log("Connected!");
+  con.query("SELECT zip FROM severe_weather_report", function (err, result, fields) {
+    if (err) throw err;
+    console.log(result);
+    test = result
+  });
 });
 
 
@@ -25,9 +31,12 @@ app.get('/', (req, res) => {
 
 app.get('/API-call', (req, response) => {
   var data = []
-  axios.get("https://chemistrydata.herokuapp.com/elements/").then(res => {
-    data = res.data
+  var lat =18.18005;
+  var lng =-66.75218;
 
+  axios.get(`https://api.weatherbit.io/v2.0/alerts?&lat=?&lng=?&key=3b80cc57b5294b21842ad122ab1cf35c`).then(res =>{
+    data = res.data
+  
     let queries = [];
 
     for(let name in data){
