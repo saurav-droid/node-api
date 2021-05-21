@@ -12,53 +12,68 @@ const con = mysql.createConnection({
   database: "weatherbit"
 });
 
-
-var test =[]
-con.connect(function(err) {
+con.connect(function (err) {
   if (err) throw err;
-  con.query("SELECT zip FROM severe_weather_report", function (err, result, fields) {
-    if (err) throw err;
-    console.log(result);
-    test = result
-  });
+  // This is my database
+
 });
 
-
+//Ignore this one
 app.get('/', (req, res) => {
   res.send('Hello World!')
 })
 
-
 app.get('/API-call', (req, response) => {
   var data = []
-  var lat =18.18005;
-  var lng =-66.75218;
 
-  axios.get(`https://api.weatherbit.io/v2.0/alerts?&lat=?&lng=?&key=3b80cc57b5294b21842ad122ab1cf35c`).then(res =>{
-    data = res.data
-  
-    let queries = [];
+  //Passing static lat and lng value
 
-    for(let name in data){
-      // if(name !== 'helium') continue;
+  con.query("SELECT lat ,lon FROM severe_weather_report", function (err, result, fields) {
+    if (err) throw err;
 
-      const dat = data[name];
-      const query = `INSERT INTO periodic (name, phase, atomic_mass, category) VALUES (?, ?, ?, ?)`;
-      queries.push({
-        query, 
-        data: [name, dat.phase, dat.atomic_mass, dat.category]
-      });
-    }
+    let total = 0;
+    result.map((data, i) => {
+      const { lat, lon } = data;
 
-    queries.slice(0,3).forEach((query, i)=>{
-      con.query(query.query, query.data, (err, res)=>{
-        if(err) throw new Error(err);
-        if(i == 2) response.send('JSON Response has been Successfully Saved.');
+
+      
+        axios.get(`https://api.weatherbit.io/v2.0/alerts?lat=${lat}&lon=${lon}&key=3b80cc57b5294b21842ad122ab1cf35c`).then(res =>{
+        data = res.data
+
+
+        console.log(data);
+        ++total;
+        // if(total === result.length-1){
+        //   response.send("Please Check your Terminal.");
+        // }
+
+       // From here the data will be inserted into database
+        let queries = [];
+
+        for (let lon in data) {
+           //if(name !== 'helium') continue;
+
+           const dat = data[lon];
+           const query = `UPDATE severe_weather_report SET ( lon,state_code,city_code) = (?, ?, ?)`;
+           queries.push({
+             query,
+             data: [lon, dat.state_code, dat.city_code]
+           });
+        }
+
+         queries.slice(0 ,3).forEach((query, i) => {
+           con.query(query.query, query.data, (err, res) => {
+             if (err) throw new Error(err);
+             if (i == 2) response.send('JSON Response has been Successfully Saved.');
+           })
+        });
       })
-    });
-  })
-});
 
+    });
+   });
+
+
+});
 
 app.listen(port, () => {
   console.log(`Your app is listening at http://localhost:${port}`)
